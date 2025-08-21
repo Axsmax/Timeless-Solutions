@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Timeless Solutions — Developer Signup</title>
+  <!-- Tailwind CDN for quick iteration -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --accent:#f5c400; } /* construction yellow */
+    html,body { height:100%; }
+    body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans"; }
+    .ts-accent { background: var(--accent); color:#1b1b1b; }
+    .focus-ring:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+    .step { display:flex; align-items:center; gap:.5rem; }
+    .step-dot { height:1.25rem; width:1.25rem; border-radius:9999px; display:grid; place-items:center; font-size:.75rem; }
+  </style>
+</head>
+<body class="min-h-full bg-neutral-50 text-neutral-900">
+  <div class="min-h-full flex items-center justify-center py-12 px-4">
+    <main class="w-full max-w-2xl">
+      <!-- Brand -->
+      <div class="flex flex-col items-center gap-3 mb-8">
+        <div class="h-12 w-12 rounded-xl ts-accent grid place-items-center font-bold">TS</div>
+        <h1 class="text-2xl font-semibold">Timeless Solutions</h1>
+        <p class="text-neutral-600 text-center">Join the private construction network.</p>
+      </div>
+
+      <!-- Card -->
+      <section class="bg-white shadow-lg rounded-2xl p-6 ring-1 ring-black/5">
+        <!-- Stepper -->
+        <nav class="flex items-center justify-center gap-6 mb-6 text-sm">
+          <div class="step">
+            <span class="step-dot ts-accent font-semibold">1</span>
+            <span>Choose Role</span>
+          </div>
+          <div class="text-neutral-300">—</div>
+          <div class="step">
+            <span class="step-dot ts-accent font-semibold">2</span>
+            <span>Developer Details</span>
+          </div>
+          <div class="text-neutral-300">—</div>
+          <div class="step">
+            <span class="step-dot bg-neutral-200 text-neutral-700">3</span>
+            <span>Pending Review</span>
+          </div>
+        </nav>
+
+        <header class="mb-4">
+          <h2 class="text-lg font-semibold">Developer Signup</h2>
+          <p class="text-sm text-neutral-600">Tell us about your company and project focus. Approval usually takes 24–48 hours.</p>
+        </header>
+
+        <!-- Alerts -->
+        <div id="alert" class="hidden mb-4 rounded-lg border px-3 py-2 text-sm"></div>
+
+        <!-- Form -->
+        <form id="developerForm" novalidate class="space-y-5">
+          <!-- Row 1 -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label for="fullName" class="block text-sm font-medium">Full Name *</label>
+              <input id="fullName" name="fullName" type="text" required
+                     class="mt-1 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-800 focus:outline-none"
+                     placeholder="Jane Doe" />
+              <p data-err="fullName" class="hidden mt-1 text-xs text-red-600">Full name is required.</p>
+            </div>
+            <div>
+              <label for="companyName" class="block text-sm font-medium">Company Name *</label>
+              <input id="companyName" name="companyName" type="text" required
+                     class="mt-1 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-800 focus:outline-none"
+                     placeholder="Doe Development Group" />
+              <p data-err="companyName" class="hidden mt-1 text-xs text-red-600">Company name is required.</p>
+            </div>
+          </div>
+
+          <!-- Row 2 -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label for="email" class="block text-sm font-medium">Email *</label>
+              <input id="email" name="email" type="email" required autocomplete="email"
+                     class="mt-1 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-800 focus:outline-none"
+                     placeholder="you@example.com" />
+              <p data-err="email" class="hidden mt-1 text-xs text-red-600">Enter a valid email.</p>
+            </div>
+            <div>
+              <label for="phone" class="block text-sm font-medium">Phone *</label>
+              <input id="phone" name="phone" type="tel" required
+                     class="mt-1 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-800 focus:outline-none"
+                     placeholder="(555) 123-4567" />
+              <p data-err="phone" class="hidden mt-1 text-xs text-red-600">Enter a valid phone number.</p>
+            </div>
+          </div>
+
+          <!-- Row 3 -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label for="password" class="block text-sm font-medium">Password *</label>
+              <input id="password" name="password" type="password" required minlength="6" autocomplete="new-password"
+                     class="mt-1 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-800 focus:outline-none"
+                     placeholder="••••••••" />
+              <p data-err="password" class="hidden mt-1 text-xs text-red-600">Min 6 characters.</p>
+            </div>
+            <div>
+              <label for="confirmPassword" class="block text-sm font-medium">Confirm Password *</label>
+              <input id="confirmPassword" name="confirmPassword" type="password" required minlength="6" autocomplete="new-password"
+                     class="mt-1 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-800 focus:outline-none"
+                     placeholder="••••••••" />
+              <p data-err="confirmPassword" class="hidden mt-1 text-xs text-red-600">Passwords must match.</p>
+            </div>
+          </div>
+
+          <!-- Row 4 -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label for="projectType" class="block text-sm font-medium">Project Type *</label>
+              <select id="projectType" name="projectType" required
+                      class="mt-1 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-800 focus:outline-none">
+                <option value="">Select project type</option>
+                <option>Residential</option>
+                <option>Commercial</option>
+                <option>Multi‑family</option>
+                <option>Renovation</option>
+                <option>Infrastructure</option>
+                <option>Other</option>
+              </select>
+              <p data-err="projectType" class="hidden mt-1 text-xs text-red-600">Select a project type.</p>
+            </div>
+            <div>
+              <label for="zips" class="block text-sm font-medium">Project ZIP Code(s) *</label>
+              <input id="zips" name="zips" type="text" required
+                     class="mt-1 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-800 focus:outline-none"
+                     placeholder="78249, 78250, 78251" />
+              <p class="mt-1 text-xs text-neutral-500">Comma-separated (5‑digit ZIPs).</p>
+              <p data-err="zips" class="hidden mt-1 text-xs text-red-600">Enter comma-separated 5‑digit ZIPs.</p>
+            </div>
+          </div>
+
+          <!-- Row 5 -->
+          <div>
+            <label for="proof" class="block text-sm font-medium">Proof of Project or Ownership *</label>
+            <input id="proof" name="proof" type="file" required accept=".pdf,.jpg,.jpeg,.png"
+                   class="mt-1 block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:px-3 file:py-2 file:bg-neutral-100 file:text-neutral-800 hover:file:bg-neutral-200" />
+            <p data-err="proof" class="hidden mt-1 text-xs text-red-600">Please upload a file (PDF/JPG/PNG).</p>
+          </div>
+
+          <!-- Row 6 (optional links) -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label for="website" class="block text-sm font-medium">Website (optional)</label>
+              <input id="website" name="website" type="url"
+                     class="mt-1 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-800 focus:outline-none"
+                     placeholder="https://yourcompany.com" />
+              <p data-err="website" class="hidden mt-1 text-xs text-red-600">Enter a valid URL (https://...).</p>
+            </div>
+            <div>
+              <label for="linkedin" class="block text-sm font-medium">LinkedIn (optional)</label>
+              <input id="linkedin" name="linkedin" type="url"
+                     class="mt-1 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm focus:border-neutral-800 focus:outline-none"
+                     placeholder="https://www.linkedin.com/in/you" />
+              <p data-err="linkedin" class="hidden mt-1 text-xs text-red-600">Enter a valid URL (https://...).</p>
+            </div>
+          </div>
+
+          <!-- Terms -->
+          <div class="flex items-start gap-3">
+            <input id="terms" name="terms" type="checkbox" required
+                   class="mt-1 h-4 w-4 rounded border-neutral-300 text-neutral-900 focus:ring-0 focus:ring-offset-0" />
+            <label for="terms" class="text-sm text-neutral-700">
+              I agree to the <a href="#" class="underline">Terms</a> and <a href="#" class="underline">Privacy Policy</a>.
+            </label>
+          </div>
+          <p data-err="terms" class="hidden -mt-3 text-xs text-red-600">You must accept the terms.</p>
+
+          <!-- Submit -->
+          <button type="submit" class="w-full rounded-lg ts-accent px-3 py-2 text-sm font-semibold hover:brightness-95 focus-ring">
+            Submit Application
+          </button>
+
+          <!-- Links -->
+          <div class="text-center text-sm">
+            <a href="signup.html" class="text-neutral-800 hover:underline">← Switch Role</a>
+            <span class="mx-2 text-neutral-300">•</span>
+            <a href="login.html" class="text-neutral-800 hover:underline">Already have an account? Log in</a>
+          </div>
+        </form>
+
+        <!-- Success state -->
+        <div id="successState" class="hidden">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="h-8 w-8 rounded-full ts-accent grid place-items-center font-bold">✓</div>
+            <h3 class="text-lg font-semibold">Application submitted</h3>
+          </div>
+          <p class="text-sm text-neutral-700">
+            Your application is <span class="font-medium">pending approval</span>. You’ll hear back within <span class="font-medium">24–48 hours</span>.
+          </p>
+          <p class="mt-2 text-sm text-neutral-700">
+            Once approved, you can log in immediately. (Contractors complete membership payment before access; developers are granted access on approval.)
+          </p>
+          <div class="mt-5">
+            <a href="login.html" class="inline-flex items-center gap-2 rounded-lg border border-neutral-300 px-3 py-2 text-sm hover:bg-neutral-50">
+              Back to Login
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <p class="mt-4 text-xs text-neutral-500 text-center">
+        Developers gain access only after approval.
+      </p>
+    </main>
+  </div>
+
+    <script type="module">
+    /* 1) Supabase init */
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+    const supabase = createClient(
+        "https://twxpfobmjaaoaixwqcfn.supabase.co",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR3eHBmb2JtamFhb2FpeHdxY2ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3NDM1MTcsImV4cCI6MjA3MTMxOTUxN30._mVC0QPx23QpG_4Y-VKb20mWCVTGAe_JRwyFyD0vHxA"
+    );
+
+    // If you created a PRIVATE bucket named "applications", leave true; else set to false (skips file upload)
+    const USE_STORAGE = true;
+
+    /* 2) UI helpers (unchanged) */
+    const alertEl = document.getElementById("alert");
+    function showAlert(type, message) {
+        const styles = {
+        error: "border-red-300 bg-red-50 text-red-800",
+        success: "border-green-300 bg-green-50 text-green-800",
+        info: "border-neutral-300 bg-neutral-50 text-neutral-800"
+        };
+        alertEl.className = `mb-4 rounded-lg border px-3 py-2 text-sm ${styles[type] || styles.info}`;
+        alertEl.textContent = message;
+        alertEl.classList.remove("hidden");
+    }
+    function clearAlert() { alertEl.classList.add("hidden"); alertEl.textContent = ""; }
+
+    /* 3) Validation (unchanged) */
+    const form = document.getElementById("developerForm");
+    const successState = document.getElementById("successState");
+    const err = (name, show, msg) => {
+        const el = document.querySelector(`[data-err="${name}"]`);
+        if (!el) return;
+        if (msg) el.textContent = msg;
+        el.classList.toggle("hidden", !show);
+    };
+
+    function validEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+    function validPhone(v){ const d=(v||"").replace(/\D/g,""); return d.length>=10 && d.length<=15; }
+    function validZips(v){ return !!v && v.split(",").map(s=>s.trim()).every(s=>/^\d{5}$/.test(s)); }
+    function validURL(v){ if(!v) return true; try{ const u=new URL(v); return /^https?:$/.test(u.protocol); } catch { return false; } }
+
+    function validate() {
+        clearAlert();
+        let ok = true;
+
+        const fullName = document.getElementById("fullName").value.trim();
+        const companyName = document.getElementById("companyName").value.trim();
+        const email = document.getElementById("email").value.trim();
+        const phone = document.getElementById("phone").value.trim();
+        const password = document.getElementById("password").value;            // collected but NOT stored server-side
+        const confirmPassword = document.getElementById("confirmPassword").value;
+        const projectType = document.getElementById("projectType").value;
+        const zips = document.getElementById("zips").value.trim();
+        const proof = document.getElementById("proof").files[0];
+        const website = document.getElementById("website").value.trim();
+        const linkedin = document.getElementById("linkedin").value.trim();
+        const terms = document.getElementById("terms").checked;
+
+        if (!fullName) err("fullName", true), ok=false; else err("fullName", false);
+        if (!companyName) err("companyName", true), ok=false; else err("companyName", false);
+        if (!validEmail(email)) err("email", true), ok=false; else err("email", false);
+        if (!validPhone(phone)) err("phone", true), ok=false; else err("phone", false);
+        if (!password || password.length < 6) err("password", true), ok=false; else err("password", false);
+        if (confirmPassword !== password) err("confirmPassword", true), ok=false; else err("confirmPassword", false);
+        if (!projectType) err("projectType", true), ok=false; else err("projectType", false);
+        if (!validZips(zips)) err("zips", true), ok=false; else err("zips", false);
+        if (!proof) err("proof", true), ok=false; else err("proof", false);
+        if (!validURL(website)) err("website", true), ok=false; else err("website", false);
+        if (!validURL(linkedin)) err("linkedin", true), ok=false; else err("linkedin", false);
+        if (!terms) err("terms", true), ok=false; else err("terms", false);
+
+        return ok;
+    }
+
+    /* 4) Real submit → Supabase */
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!validate()) return;
+
+        // Build payload from form
+        const payload = {
+        fullName: document.getElementById("fullName").value.trim(),
+        companyName: document.getElementById("companyName").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        phone: document.getElementById("phone").value.trim(),
+        // NOTE: DO NOT store this password in applications; real account is created on approval via Supabase invite
+        projectType: document.getElementById("projectType").value,
+        projectZips: document.getElementById("zips").value.trim().split(",").map(s => s.trim()),
+        proofFile: document.getElementById("proof").files[0] || null,
+        website: document.getElementById("website").value.trim() || null,
+        linkedin: document.getElementById("linkedin").value.trim() || null
+        };
+
+        try {
+        // Optional file upload
+        let proof_filename = null;
+        if (USE_STORAGE && payload.proofFile) {
+            const fileName = `incoming/${crypto.randomUUID()}_${payload.proofFile.name}`;
+            const { error: upErr } = await supabase.storage.from("applications").upload(fileName, payload.proofFile);
+            if (upErr) throw upErr;
+            proof_filename = fileName;
+        }
+
+        // Insert application row
+        const { error } = await supabase.from("applications").insert([{
+            role: "developer",
+            full_name: payload.fullName,
+            company_name: payload.companyName,
+            email: payload.email,
+            phone: payload.phone,
+            project_type: payload.projectType,
+            project_zips: payload.projectZips,
+            website: payload.website,
+            linkedin: payload.linkedin,
+            proof_filename
+        }]);
+        if (error) throw error;
+
+        // Success UI
+        form.classList.add("hidden");
+        successState.classList.remove("hidden");
+        showAlert("success", "Application received. We’ll review it shortly.");
+
+        } catch (err) {
+        console.error(err);
+        showAlert("error", err.message || "Something went wrong. Try again.");
+        }
+    });
+
+    // (Optional) Role prefill hook
+    try {
+        const savedRole = localStorage.getItem("ts_selected_role");
+        if (savedRole === "developer") { /* future role-specific tweaks */ }
+    } catch {}
+    </script>
+
+</body>
+</html>
