@@ -212,139 +212,116 @@
     </main>
   </div>
 
-    <script type="module">
-    /* 1) Supabase init */
-    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-    const supabase = createClient(
-        "https://twxpfobmjaaoaixwqcfn.supabase.co",
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR3eHBmb2JtamFhb2FpeHdxY2ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3NDM1MTcsImV4cCI6MjA3MTMxOTUxN30._mVC0QPx23QpG_4Y-VKb20mWCVTGAe_JRwyFyD0vHxA"
-    );
+<script type="module">
+  /* 1) Supabase init */
+  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+  const supabase = createClient(
+    "https://twxpfobmjaaoaixwqcfn.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR3eHBmb2JtamFhb2FpeHdxY2ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3NDM1MTcsImV4cCI6MjA3MTMxOTUxN30._mVC0QPx23QpG_4Y-VKb20mWCVTGAe_JRwyFyD0vHxA"
+  );
 
-    // Toggle this: if you created a private bucket named "applications", leave true; else set to false
-    const USE_STORAGE = true;
+  // Toggle: you created a private bucket named "applications"
+  const USE_STORAGE = true;
 
-    /* 2) UI helpers (unchanged) */
-    const alertEl = document.getElementById("alert");
-    function showAlert(type, message) {
-        const styles = {
-        error: "border-red-300 bg-red-50 text-red-800",
-        success: "border-green-300 bg-green-50 text-green-800",
-        info: "border-neutral-300 bg-neutral-50 text-neutral-800"
-        };
-        alertEl.className = `mb-4 rounded-lg border px-3 py-2 text-sm ${styles[type] || styles.info}`;
-        alertEl.textContent = message;
-        alertEl.classList.remove("hidden");
+  /* 2) UI helpers (reuse your existing alert element) */
+  const alertEl = document.getElementById("alert");
+  function showAlert(type, message) {
+    const styles = {
+      error: "border-red-300 bg-red-50 text-red-800",
+      success: "border-green-300 bg-green-50 text-green-800",
+      info: "border-neutral-300 bg-neutral-50 text-neutral-800"
+    };
+    alertEl.className = `mb-4 rounded-lg border px-3 py-2 text-sm ${styles[type] || styles.info}`;
+    alertEl.textContent = message;
+    alertEl.classList.remove("hidden");
+  }
+  function clearAlert() {
+    alertEl.classList.add("hidden");
+    alertEl.textContent = "";
+  }
+
+  /* 3) (Reuse your existing validation functions as-is) */
+  const form = document.getElementById("contractorForm");
+  const successState = document.getElementById("successState");
+
+  /* 4) Helper: try upload only if logged in */
+  async function maybeUploadToApplicationsBucket(file) {
+    if (!file || !USE_STORAGE) return { path: null, skipped: true };
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      // No session → cannot pass RLS (owner = auth.uid())
+      return { path: null, skipped: true };
     }
-    function clearAlert() {
-        alertEl.classList.add("hidden");
-        alertEl.textContent = "";
-    }
 
-    /* 3) Validation (unchanged) */
-    const form = document.getElementById("contractorForm");
-    const successState = document.getElementById("successState");
-    const err = (name, show, msg) => {
-        const el = document.querySelector(`[data-err="${name}"]`);
-        if (!el) return;
-        if (msg) el.textContent = msg;
-        el.classList.toggle("hidden", !show);
+    const safeName = file.name.replace(/\s+/g, "_");
+    const path = `${user.id}/${crypto.randomUUID()}_${safeName}`;
+    const { data, error } = await supabase.storage.from("applications").upload(path, file, { upsert: false });
+    if (error) throw error;
+    return { path: data.path, skipped: false };
+  }
+
+  /* 5) Submit → insert application row (and optional file) */
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    clearAlert();
+
+    // If you kept your existing validate(), call it here:
+    if (typeof validate === "function" && !validate()) return;
+
+    // Gather fields
+    const payload = {
+      role: "contractor",
+      full_name: document.getElementById("fullName").value.trim(),
+      company_name: document.getElementById("companyName").value.trim(),
+      email: document.getElementById("email").value.trim(),
+      phone: document.getElementById("phone").value.trim(),
+      trade: document.getElementById("trade").value,
+      years_in_business: Number(document.getElementById("years").value || 0),
+      service_zips: document.getElementById("zips").value.split(",").map(s => s.trim()).filter(Boolean)
+      // add your vetting fields here if you included them in the HTML:
+      // years_band: document.getElementById("yearsBand")?.value || null,
+      // proof_method: document.getElementById("proofMethod")?.value || null,
+      // proof_value: document.getElementById("proofValue")?.value || null,
+      // notes: document.getElementById("notes")?.value?.trim() || null,
+      // attest: !!document.getElementById("attest")?.checked,
     };
 
-    function validEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
-    function validPhone(v) { const d = (v || "").replace(/\D/g, ""); return d.length >= 10 && d.length <= 15; }
-    function validZips(v) { return !!v && v.split(",").map(s => s.trim()).every(s => /^\d{5}$/.test(s)); }
+    const licenseFile = document.getElementById("license")?.files?.[0] || null;
 
-    function validate() {
-        clearAlert();
-        let ok = true;
-
-        const fullName = document.getElementById("fullName").value.trim();
-        const companyName = document.getElementById("companyName").value.trim();
-        const email = document.getElementById("email").value.trim();
-        const phone = document.getElementById("phone").value.trim();
-        const password = document.getElementById("password").value;          // collected but NOT stored server-side
-        const confirmPassword = document.getElementById("confirmPassword").value;
-        const trade = document.getElementById("trade").value;
-        const years = document.getElementById("years").value;
-        const zips = document.getElementById("zips").value.trim();
-        const terms = document.getElementById("terms").checked;
-
-        if (!fullName) { err("fullName", true); ok = false; } else err("fullName", false);
-        if (!companyName) { err("companyName", true); ok = false; } else err("companyName", false);
-        if (!validEmail(email)) { err("email", true); ok = false; } else err("email", false);
-        if (!validPhone(phone)) { err("phone", true); ok = false; } else err("phone", false);
-        if (!password || password.length < 6) { err("password", true); ok = false; } else err("password", false);
-        if (confirmPassword !== password) { err("confirmPassword", true); ok = false; } else err("confirmPassword", false);
-        if (!trade) { err("trade", true); ok = false; } else err("trade", false);
-        const yearsNum = Number(years);
-        if (!(years !== "" && yearsNum >= 0 && yearsNum <= 100)) { err("years", true); ok = false; } else err("years", false);
-        if (!validZips(zips)) { err("zips", true); ok = false; } else err("zips", false);
-        if (!terms) { err("terms", true); ok = false; } else err("terms", false);
-
-        return ok;
-    }
-
-    /* 4) Real submit → Supabase */
-    form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        if (!validate()) return;
-
-        // Build payload from form
-        const payload = {
-        fullName: document.getElementById("fullName").value.trim(),
-        companyName: document.getElementById("companyName").value.trim(),
-        email: document.getElementById("email").value.trim(),
-        phone: document.getElementById("phone").value.trim(),
-        // NOTE: we DO NOT store password in applications; user sets password after approval via invite email
-        trade: document.getElementById("trade").value,
-        yearsInBusiness: Number(document.getElementById("years").value),
-        serviceZips: document.getElementById("zips").value.trim().split(",").map(s => s.trim()),
-        licenseFile: document.getElementById("license").files[0] || null
-        };
-
-        try {
-        // Optional file upload to Storage
-        let license_filename = null;
-        if (USE_STORAGE && payload.licenseFile) {
-            const fileName = `incoming/${crypto.randomUUID()}_${payload.licenseFile.name}`;
-            const { error: upErr } = await supabase
-            .storage
-            .from("applications")
-            .upload(fileName, payload.licenseFile);
-            if (upErr) throw upErr;
-            license_filename = fileName;
-        }
-
-        // Insert application row
-        const { error } = await supabase.from("applications").insert([{
-            role: "contractor",
-            full_name: payload.fullName,
-            company_name: payload.companyName,
-            email: payload.email,
-            phone: payload.phone,
-            trade: payload.trade,
-            years_in_business: payload.yearsInBusiness,
-            service_zips: payload.serviceZips,
-            license_filename
-        }]);
-        if (error) throw error;
-
-        // Success UI
-        form.classList.add("hidden");
-        successState.classList.remove("hidden");
-        showAlert("success", "Application received. We’ll review it shortly.");
-
-        } catch (err) {
-        console.error(err);
-        showAlert("error", err.message || "Something went wrong. Try again.");
-        }
-    });
-
-    // (Optional) Prefill hook left as-is
     try {
-        const savedRole = localStorage.getItem("ts_selected_role");
-        if (savedRole === "contractor") { /* role-specific tweaks later */ }
-    } catch {}
-    </script>
+      // 1) Try upload (will skip if no session)
+      const up = await maybeUploadToApplicationsBucket(licenseFile);
+      const license_url = up.path || null; // store path in applications.license_url
+
+      // 2) Insert application
+      const { error } = await supabase.from("applications").insert([{
+        ...payload,
+        license_url  // ensure your table has this column
+      }]);
+      if (error) throw error;
+
+      // 3) UI success
+      form.classList.add("hidden");
+      successState.classList.remove("hidden");
+
+      if (up.skipped) {
+        showAlert("info", "Application received. You can upload documents after we approve and invite you to log in.");
+      } else {
+        showAlert("success", "Application received with your document. We’ll review it shortly.");
+      }
+    } catch (err) {
+      console.error(err);
+      showAlert("error", err?.message || "Something went wrong. Try again.");
+    }
+  });
+
+  // Optional: role prefill
+  try {
+    const savedRole = localStorage.getItem("ts_selected_role");
+    if (savedRole === "contractor") { /* future role tweaks */ }
+  } catch {}
+</script>
+
 </body>
 </html>
