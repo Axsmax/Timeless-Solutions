@@ -195,22 +195,32 @@
           showAlert("error", "Could not retrieve user session. Try again.");
           return;
         }
+        // Check application status
+        const { data: application, error: appErr } = await supabase
+          .from("applications")
+          .select("status")
+          .eq("applicant_id", userId)
+          .maybeSingle();
+
+        if (appErr) {
+          showAlert("error", "Application lookup failed. Please try again.");
+          return;
+        }
+
+        if (!application || application.status !== "approved") {
+          showAlert("error", "Your application is still pending approval. You’ll hear back within 24–48 hours.");
+          return;
+        }
 
         // Fetch profile: role + payment status
         const { data: profile, error: profErr } = await supabase
           .from("profiles")
-          .select("role, status, is_paid")
+          .select("role, is_paid")
           .eq("id", userId)
           .maybeSingle();
 
-        if (profErr) {
+        if (profErr || !profile) {
           showAlert("error", "Profile lookup failed. Please try again.");
-          return;
-        }
-
-        // Gate access
-        if (!profile || profile.status !== "approved") {
-          showAlert("error", "Your application is still pending approval. You’ll hear back within 24–48 hours.");
           return;
         }
 
