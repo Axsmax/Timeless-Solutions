@@ -215,17 +215,15 @@
         }
 
         if (profile.role === "contractor" && !profile.is_paid) {
-          showAlert("error", "Membership payment required before access.");
-          // TODO: window.location.href = "payment.html"; // when payment page exists
+          window.location.href = "payment.html";
           return;
         }
 
-        // ✅ Success
-        showAlert("success", `Welcome back, ${profile.role}! You’re cleared for access.`);
-
-        // TODO: Redirect to role dashboard once built
-        // if (profile.role === "developer") window.location.href = "developer-dashboard.html";
-        // else window.location.href = "contractor-dashboard.html";
+        if (profile.role === "developer") {
+          window.location.href = "developer-dashboard.html";
+        } else {
+          window.location.href = "contractor-dashboard.html";
+        }
       } catch (err) {
         console.error(err);
         showAlert("error", "Unexpected error. Please try again.");
