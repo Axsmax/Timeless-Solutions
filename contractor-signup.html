@@ -270,11 +270,14 @@
     if (typeof validate === "function" && !validate()) return;
 
     // Gather fields
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    const role = "contractor";
     const payload = {
-      role: "contractor",
+      role,
       full_name: document.getElementById("fullName").value.trim(),
       company_name: document.getElementById("companyName").value.trim(),
-      email: document.getElementById("email").value.trim(),
+      email,
       phone: document.getElementById("phone").value.trim(),
       trade: document.getElementById("trade").value,
       years_in_business: Number(document.getElementById("years").value || 0),
@@ -290,15 +293,27 @@
     const licenseFile = document.getElementById("license")?.files?.[0] || null;
 
     try {
+      // Sign up user and attach role
+      const { data: signData, error: signError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { role } }
+      });
+      if (signError) throw signError;
+      const user_id = signData.user.id;
+
       // 1) Try upload (will skip if no session)
       const up = await maybeUploadToApplicationsBucket(licenseFile);
       const license_url = up.path || null; // store path in applications.license_url
 
       // 2) Insert application
-      const { error } = await supabase.from("applications").insert([{
-        ...payload,
-        license_url  // ensure your table has this column
-      }]);
+      const { error } = await supabase.from("applications").insert([
+        {
+          ...payload,
+          user_id,
+          license_url  // ensure your table has this column
+        }
+      ]);
       if (error) throw error;
 
       // 3) UI success

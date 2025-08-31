@@ -292,13 +292,16 @@
         e.preventDefault();
         if (!validate()) return;
 
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+        const role = "developer";
+
         // Build payload from form
         const payload = {
         fullName: document.getElementById("fullName").value.trim(),
         companyName: document.getElementById("companyName").value.trim(),
-        email: document.getElementById("email").value.trim(),
+        email,
         phone: document.getElementById("phone").value.trim(),
-        // NOTE: DO NOT store this password in applications; real account is created on approval via Supabase invite
         projectType: document.getElementById("projectType").value,
         projectZips: document.getElementById("zips").value.trim().split(",").map(s => s.trim()),
         proofFile: document.getElementById("proof").files[0] || null,
@@ -307,18 +310,28 @@
         };
 
         try {
+        // Sign up user with role metadata
+        const { data: signData, error: signError } = await supabase.auth.signUp({
+            email,
+            password,
+            options: { data: { role } }
+        });
+        if (signError) throw signError;
+        const user_id = signData.user.id;
+
         // Optional file upload
         let proof_filename = null;
         if (USE_STORAGE && payload.proofFile) {
-            const fileName = `incoming/${crypto.randomUUID()}_${payload.proofFile.name}`;
+            const fileName = `${user_id}/${crypto.randomUUID()}_${payload.proofFile.name}`;
             const { error: upErr } = await supabase.storage.from("applications").upload(fileName, payload.proofFile);
             if (upErr) throw upErr;
             proof_filename = fileName;
         }
 
         // Insert application row
-        const { error } = await supabase.from("applications").insert([{
-            role: "developer",
+        const { error } = await supabase.from("applications").insert([{ 
+            user_id,
+            role,
             full_name: payload.fullName,
             company_name: payload.companyName,
             email: payload.email,
