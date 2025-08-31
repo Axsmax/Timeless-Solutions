@@ -196,10 +196,10 @@
           return;
         }
 
-        // Fetch profile: role + payment status
+        // Fetch profile: role + approval/payment status
         const { data: profile, error: profErr } = await supabase
           .from("profiles")
-          .select("role, status, is_paid")
+          .select("role, approved, is_paid")
           .eq("id", userId)
           .maybeSingle();
 
@@ -209,7 +209,7 @@
         }
 
         // Gate access
-        if (!profile || profile.status !== "approved") {
+        if (!profile || !profile.approved) {
           showAlert("error", "Your application is still pending approval. You’ll hear back within 24–48 hours.");
           return;
         }
