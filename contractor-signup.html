@@ -287,29 +287,47 @@
       // attest: !!document.getElementById("attest")?.checked,
     };
 
+    const password = document.getElementById("password").value;
     const licenseFile = document.getElementById("license")?.files?.[0] || null;
 
     try {
-      // 1) Try upload (will skip if no session)
+      // 1) Create auth user
+      const { data: signData, error: signErr } = await supabase.auth.signUp({
+        email: payload.email,
+        password,
+        options: { data: { role: payload.role } }
+      });
+      if (signErr || !signData.user) {
+        showAlert("error", signErr?.message || "Sign up failed.");
+        return;
+      }
+      const authUserId = signData.user.id;
+
+      // 2) Try upload (will skip if no session)
       const up = await maybeUploadToApplicationsBucket(licenseFile);
       const license_url = up.path || null; // store path in applications.license_url
 
-      // 2) Insert application
+      // 3) Insert application
       const { error } = await supabase.from("applications").insert([{
         ...payload,
+        auth_user_id: authUserId,
         license_url  // ensure your table has this column
       }]);
       if (error) throw error;
 
-      // 3) UI success
+      // 4) UI success
       form.classList.add("hidden");
       successState.classList.remove("hidden");
 
+      const needsConfirm = !signData.session;
+      let msg;
       if (up.skipped) {
-        showAlert("info", "Application received. You can upload documents after we approve and invite you to log in.");
+        msg = "Application received. You can upload documents after we approve and invite you to log in.";
       } else {
-        showAlert("success", "Application received with your document. We’ll review it shortly.");
+        msg = "Application received with your document. We’ll review it shortly.";
       }
+      if (needsConfirm) msg += " Please check your email to confirm your account.";
+      showAlert(up.skipped ? "info" : "success", msg);
     } catch (err) {
       console.error(err);
       showAlert("error", err?.message || "Something went wrong. Try again.");

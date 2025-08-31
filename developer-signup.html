@@ -298,27 +298,40 @@
         companyName: document.getElementById("companyName").value.trim(),
         email: document.getElementById("email").value.trim(),
         phone: document.getElementById("phone").value.trim(),
-        // NOTE: DO NOT store this password in applications; real account is created on approval via Supabase invite
         projectType: document.getElementById("projectType").value,
         projectZips: document.getElementById("zips").value.trim().split(",").map(s => s.trim()),
         proofFile: document.getElementById("proof").files[0] || null,
         website: document.getElementById("website").value.trim() || null,
         linkedin: document.getElementById("linkedin").value.trim() || null
         };
+        const password = document.getElementById("password").value;
+        const role = "developer";
 
         try {
-        // Optional file upload
+        // 1) Create auth user
+        const { data: signData, error: signErr } = await supabase.auth.signUp({
+            email: payload.email,
+            password,
+            options: { data: { role } }
+        });
+        if (signErr || !signData.user) {
+            showAlert("error", signErr?.message || "Sign up failed.");
+            return;
+        }
+        const authUserId = signData.user.id;
+
+        // 2) Optional file upload (requires session)
         let proof_filename = null;
-        if (USE_STORAGE && payload.proofFile) {
+        if (USE_STORAGE && payload.proofFile && signData.session) {
             const fileName = `incoming/${crypto.randomUUID()}_${payload.proofFile.name}`;
             const { error: upErr } = await supabase.storage.from("applications").upload(fileName, payload.proofFile);
             if (upErr) throw upErr;
             proof_filename = fileName;
         }
 
-        // Insert application row
-        const { error } = await supabase.from("applications").insert([{
-            role: "developer",
+        // 3) Insert application row
+        const { error } = await supabase.from("applications").insert([{ 
+            role,
             full_name: payload.fullName,
             company_name: payload.companyName,
             email: payload.email,
@@ -327,14 +340,19 @@
             project_zips: payload.projectZips,
             website: payload.website,
             linkedin: payload.linkedin,
-            proof_filename
+            proof_filename,
+            auth_user_id: authUserId
         }]);
         if (error) throw error;
 
-        // Success UI
+        // 4) Success UI
         form.classList.add("hidden");
         successState.classList.remove("hidden");
-        showAlert("success", "Application received. We’ll review it shortly.");
+        const needsConfirm = !signData.session;
+        const msg = needsConfirm
+            ? "Application received. Check your email to confirm your account."
+            : "Application received. We’ll review it shortly.";
+        showAlert("success", msg);
 
         } catch (err) {
         console.error(err);
