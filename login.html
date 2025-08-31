@@ -100,8 +100,11 @@
       "https://twxpfobmjaaoaixwqcfn.supabase.co",
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR3eHBmb2JtamFhb2FpeHdxY2ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3NDM1MTcsImV4cCI6MjA3MTMxOTUxN30._mVC0QPx23QpG_4Y-VKb20mWCVTGAe_JRwyFyD0vHxA",
       {
-        // Optional: persist session if "remember me" is checked
-        auth: { persistSession: true, autoRefreshToken: true }
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          storage: sessionStorage // default to sessionStorage so session ends on close
+        }
       }
     );
 
@@ -165,9 +168,12 @@
       return valid;
     }
 
-    // Optional: apply "remember me" to Supabase session storage behavior
+    // Use sessionStorage by default so sessions vanish when the browser closes
+    supabase.auth.setSessionStorage(sessionStorage);
+    if (rememberMe.checked) supabase.auth.setSessionStorage(localStorage);
+
+    // Toggle between sessionStorage and localStorage based on "remember me"
     rememberMe.addEventListener("change", () => {
-      // When unchecked, store session in memory only (clears on refresh).
       const storage = rememberMe.checked ? localStorage : sessionStorage;
       supabase.auth.setSessionStorage(storage);
     });
