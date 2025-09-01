@@ -221,11 +221,13 @@
         }
 
         // ✅ Success
-        showAlert("success", `Welcome back, ${profile.role}! You’re cleared for access.`);
+        showAlert("success", `Welcome back, ${profile.role}! Redirecting...`);
 
-        // TODO: Redirect to role dashboard once built
-        // if (profile.role === "developer") window.location.href = "developer-dashboard.html";
-        // else window.location.href = "contractor-dashboard.html";
+        // Redirect to the appropriate dashboard based on role
+        const dashboard = profile.role === "developer"
+          ? "developer-dashboard.html"
+          : "contractor-dashboard.html";
+        window.location.href = dashboard;
       } catch (err) {
         console.error(err);
         showAlert("error", "Unexpected error. Please try again.");
