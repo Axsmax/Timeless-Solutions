@@ -293,12 +293,13 @@
         if (!validate()) return;
 
         // Build payload from form
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
         const payload = {
         fullName: document.getElementById("fullName").value.trim(),
         companyName: document.getElementById("companyName").value.trim(),
-        email: document.getElementById("email").value.trim(),
+        email,
         phone: document.getElementById("phone").value.trim(),
-        // NOTE: DO NOT store this password in applications; real account is created on approval via Supabase invite
         projectType: document.getElementById("projectType").value,
         projectZips: document.getElementById("zips").value.trim().split(",").map(s => s.trim()),
         proofFile: document.getElementById("proof").files[0] || null,
@@ -307,6 +308,15 @@
         };
 
         try {
+        // Sign up user
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email: payload.email,
+            password,
+            options: { data: { role: "developer" } }
+        });
+        if (signUpError) throw signUpError;
+        const userId = signUpData.user?.id;
+
         // Optional file upload
         let proof_filename = null;
         if (USE_STORAGE && payload.proofFile) {
@@ -327,14 +337,15 @@
             project_zips: payload.projectZips,
             website: payload.website,
             linkedin: payload.linkedin,
-            proof_filename
+            proof_filename,
+            user_id: userId
         }]);
         if (error) throw error;
 
         // Success UI
         form.classList.add("hidden");
         successState.classList.remove("hidden");
-        showAlert("success", "Application received. We’ll review it shortly.");
+        showAlert("success", "Signup successful. Pending approval.");
 
         } catch (err) {
         console.error(err);
