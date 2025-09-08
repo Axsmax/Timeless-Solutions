@@ -213,114 +213,198 @@
   </div>
 
 <script type="module">
-  /* 1) Supabase init */
-  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-  const supabase = createClient(
-    "https://twxpfobmjaaoaixwqcfn.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR3eHBmb2JtamFhb2FpeHdxY2ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3NDM1MTcsImV4cCI6MjA3MTMxOTUxN30._mVC0QPx23QpG_4Y-VKb20mWCVTGAe_JRwyFyD0vHxA"
-  );
+// ===========================
+// Supabase init (your keys)
+// ===========================
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-  // Toggle: you created a private bucket named "applications"
-  const USE_STORAGE = true;
+const supabase = createClient(
+  "https://twxpfobmjaaoaixwqcfn.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR3eHBmb2JtamFhb2FpeHdxY2ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3NDM1MTcsImV4cCI6MjA3MTMxOTUxN30._mVC0QPx23QpG_4Y-VKb20mWCVTGAe_JRwyFyD0vHxA",
+  { auth: { persistSession: true, autoRefreshToken: true } }
+);
 
-  /* 2) UI helpers (reuse your existing alert element) */
-  const alertEl = document.getElementById("alert");
-  function showAlert(type, message) {
-    const styles = {
-      error: "border-red-300 bg-red-50 text-red-800",
-      success: "border-green-300 bg-green-50 text-green-800",
-      info: "border-neutral-300 bg-neutral-50 text-neutral-800"
-    };
-    alertEl.className = `mb-4 rounded-lg border px-3 py-2 text-sm ${styles[type] || styles.info}`;
-    alertEl.textContent = message;
-    alertEl.classList.remove("hidden");
-  }
-  function clearAlert() {
-    alertEl.classList.add("hidden");
-    alertEl.textContent = "";
-  }
+// If your project requires email confirmation, there usually WON'T be a session
+// right after signUp(). That's fine—this script still inserts the application.
+const REQUIRES_EMAIL_CONFIRM = true;
 
-  /* 3) (Reuse your existing validation functions as-is) */
-  const form = document.getElementById("contractorForm");
-  const successState = document.getElementById("successState");
+// ===========================
+// UI helpers (uses your IDs)
+// ===========================
+const form = document.getElementById("contractorForm");
+const successState = document.getElementById("successState");
+const alertEl = document.getElementById("alert");
 
-  /* 4) Helper: try upload only if logged in */
-  async function maybeUploadToApplicationsBucket(file) {
-    if (!file || !USE_STORAGE) return { path: null, skipped: true };
+function showAlert(type, message) {
+  const styles = {
+    error: "border-red-300 bg-red-50 text-red-800",
+    success: "border-green-300 bg-green-50 text-green-800",
+    info: "border-neutral-300 bg-neutral-50 text-neutral-800"
+  };
+  alertEl.className = `mb-4 rounded-lg border px-3 py-2 text-sm ${styles[type] || styles.info}`;
+  alertEl.textContent = message;
+  alertEl.classList.remove("hidden");
+}
+function clearAlert() {
+  alertEl.classList.add("hidden");
+  alertEl.textContent = "";
+}
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      // No session → cannot pass RLS (owner = auth.uid())
-      return { path: null, skipped: true };
-    }
+// Simple inline error toggle (expects <p data-err="fieldName"> helpers in your HTML)
+const err = (name, show, msg) => {
+  const el = document.querySelector(`[data-err="${name}"]`);
+  if (!el) return;
+  if (msg) el.textContent = msg;
+  el.classList.toggle("hidden", !show);
+};
 
-    const safeName = file.name.replace(/\s+/g, "_");
-    const path = `${user.id}/${crypto.randomUUID()}_${safeName}`;
-    const { data, error } = await supabase.storage.from("applications").upload(path, file, { upsert: false });
-    if (error) throw error;
-    return { path: data.path, skipped: false };
-  }
+// ===========================
+// Validation (same rules you used)
+// ===========================
+function validEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+function validPhone(v) { const d = (v || "").replace(/\D/g, ""); return d.length >= 10 && d.length <= 15; }
+function validZips(v) { return !!v && v.split(",").map(s => s.trim()).every(s => /^\d{5}$/.test(s)); }
 
-  /* 5) Submit → insert application row (and optional file) */
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    clearAlert();
+function validate() {
+  let ok = true;
+  clearAlert();
 
-    // If you kept your existing validate(), call it here:
-    if (typeof validate === "function" && !validate()) return;
+  const fullName = document.getElementById("fullName").value.trim();
+  const companyName = document.getElementById("companyName").value.trim();
+  const email = document.getElementById("email").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+  const password = document.getElementById("password").value;
+  const confirmPassword = document.getElementById("confirmPassword").value;
+  const trade = document.getElementById("trade").value;
+  const years = document.getElementById("years").value;
+  const zips = document.getElementById("zips").value.trim();
+  const terms = document.getElementById("terms").checked;
 
-    // Gather fields
-    const payload = {
-      role: "contractor",
-      full_name: document.getElementById("fullName").value.trim(),
-      company_name: document.getElementById("companyName").value.trim(),
-      email: document.getElementById("email").value.trim(),
-      phone: document.getElementById("phone").value.trim(),
-      trade: document.getElementById("trade").value,
-      years_in_business: Number(document.getElementById("years").value || 0),
-      service_zips: document.getElementById("zips").value.split(",").map(s => s.trim()).filter(Boolean)
-      // add your vetting fields here if you included them in the HTML:
-      // years_band: document.getElementById("yearsBand")?.value || null,
-      // proof_method: document.getElementById("proofMethod")?.value || null,
-      // proof_value: document.getElementById("proofValue")?.value || null,
-      // notes: document.getElementById("notes")?.value?.trim() || null,
-      // attest: !!document.getElementById("attest")?.checked,
-    };
+  if (!fullName) { err("fullName", true); ok = false; } else err("fullName", false);
+  if (!companyName) { err("companyName", true); ok = false; } else err("companyName", false);
+  if (!validEmail(email)) { err("email", true); ok = false; } else err("email", false);
+  if (!validPhone(phone)) { err("phone", true); ok = false; } else err("phone", false);
+  if (!password || password.length < 6) { err("password", true); ok = false; } else err("password", false);
+  if (confirmPassword !== password) { err("confirmPassword", true); ok = false; } else err("confirmPassword", false);
+  if (!trade) { err("trade", true); ok = false; } else err("trade", false);
 
-    const licenseFile = document.getElementById("license")?.files?.[0] || null;
+  const yearsNum = Number(years);
+  if (!(years !== "" && yearsNum >= 0 && yearsNum <= 100)) { err("years", true); ok = false; } else err("years", false);
 
-    try {
-      // 1) Try upload (will skip if no session)
-      const up = await maybeUploadToApplicationsBucket(licenseFile);
-      const license_url = up.path || null; // store path in applications.license_url
+  if (!validZips(zips)) { err("zips", true); ok = false; } else err("zips", false);
+  if (!terms) { err("terms", true); ok = false; } else err("terms", false);
 
-      // 2) Insert application
-      const { error } = await supabase.from("applications").insert([{
-        ...payload,
-        license_url  // ensure your table has this column
-      }]);
-      if (error) throw error;
+  return ok;
+}
 
-      // 3) UI success
-      form.classList.add("hidden");
-      successState.classList.remove("hidden");
+// ===========================
+// Optional upload helper
+// Only works when a session exists (i.e., email confirmation OFF).
+// If no session, we skip and still insert the application.
+// ===========================
+async function maybeUploadToApplicationsBucket(file) {
+  if (!file) return { path: null, skipped: true };
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return { path: null, skipped: true }; // RLS needs auth to write storage
 
-      if (up.skipped) {
-        showAlert("info", "Application received. You can upload documents after we approve and invite you to log in.");
-      } else {
-        showAlert("success", "Application received with your document. We’ll review it shortly.");
-      }
-    } catch (err) {
-      console.error(err);
-      showAlert("error", err?.message || "Something went wrong. Try again.");
-    }
-  });
+  const safeName = file.name.replace(/\s+/g, "_");
+  const userId = session.user.id;
+  const path = `${userId}/${crypto.randomUUID()}_${safeName}`;
 
-  // Optional: role prefill
+  const { data, error } = await supabase.storage.from("applications").upload(path, file, { upsert: false });
+  if (error) throw error;
+  return { path: data.path, skipped: false };
+}
+
+// ===========================
+// Submit handler
+// 1) Create Auth user with password they typed
+// 2) Upload optional file (if session exists)
+// 3) Insert application row
+// ===========================
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!validate()) return;
+
+  // Gather fields
+  const payload = {
+    role: "contractor",
+    full_name: document.getElementById("fullName").value.trim(),
+    company_name: document.getElementById("companyName").value.trim(),
+    email: document.getElementById("email").value.trim(),
+    phone: document.getElementById("phone").value.trim(),
+    trade: document.getElementById("trade").value,
+    years_in_business: Number(document.getElementById("years").value || 0),
+    service_zips: document.getElementById("zips").value.split(",").map(s => s.trim()).filter(Boolean),
+  };
+  const password = document.getElementById("password").value;
+  const licenseFile = document.getElementById("license")?.files?.[0] || null;
+
   try {
-    const savedRole = localStorage.getItem("ts_selected_role");
-    if (savedRole === "contractor") { /* future role tweaks */ }
-  } catch {}
+    // ---- 1) Auth sign-up (this saves the SAME password for login) ----
+    // Also send role in user_metadata for your trigger (if you added one).
+    const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+      email: payload.email,
+      password,
+      options: {
+        data: { role: "contractor" },
+        // If you want an email link to send them back to your site after email confirm:
+        // emailRedirectTo: "https://timelessfieldsolutions.com/login.html"
+      }
+    });
+    if (signUpErr) {
+      // Common: "User already registered"
+      showAlert("error", signUpErr.message || "Could not create account.");
+      return;
+    }
+
+    // We might NOT have a session if email confirmation is required.
+    // That's okay—we can still insert an application row (policy allows anon insert).
+    // Optional storage upload only if we do have a session:
+    let license_url = null;
+    try {
+      const up = await maybeUploadToApplicationsBucket(licenseFile);
+      license_url = up.path || null;
+    } catch (upErr) {
+      // Non-fatal; we still insert application without file path
+      console.warn("Upload skipped/failed:", upErr?.message);
+    }
+
+    // ---- 2) Insert application row (public.applications) ----
+    const { error: appErr } = await supabase.from("applications").insert([{
+      role: payload.role,
+      full_name: payload.full_name,
+      company_name: payload.company_name,
+      email: payload.email,
+      phone: payload.phone,
+      trade: payload.trade,
+      years_in_business: payload.years_in_business,
+      service_zips: payload.service_zips,
+      license_url
+    }]);
+    if (appErr) throw appErr;
+
+    // ---- 3) UI success ----
+    form.classList.add("hidden");
+    successState.classList.remove("hidden");
+
+    if (REQUIRES_EMAIL_CONFIRM) {
+      showAlert("success", "Account created. Check your email to confirm, then log in. Your application was recorded.");
+    } else {
+      showAlert("success", "Account created and application submitted. You can log in now.");
+    }
+  } catch (err) {
+    console.error(err);
+    showAlert("error", err?.message || "Something went wrong. Try again.");
+  }
+});
+
+// Optional: keep your localStorage role hint
+try {
+  const savedRole = localStorage.getItem("ts_selected_role");
+  if (savedRole === "contractor") { /* any role-specific tweaks later */ }
+} catch {}
+
 </script>
 
 </body>
