@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <!-- ================================ -->
+  <!-- CONTRACTOR: HEAD (THEME + META) -->
+  <!-- ================================ -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Timeless Solutions — Contractor Dashboard</title>
+  <meta name="description" content="Contractor feed of open projects with fast filters and quick bid modal." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { --ts-accent:#f5c400; }
+    html,body { height: 100%; }
+    body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; }
+    .accent { background: var(--ts-accent); color: #0a0a0a; }
+    .accent-outline { outline: 2px solid var(--ts-accent); outline-offset: 2px; }
+    .card { background:#0f0f10; border:1px solid rgba(255,255,255,.06); }
+    .pill { border-radius:9999px; padding:.25rem .5rem; font-size:.75rem; background:rgba(255,255,255,.08); }
+    .field { background:#0c0c0d; border:1px solid rgba(255,255,255,.12); }
+  </style>
+</head>
+<body class="min-h-full bg-black text-white">
+
+  <!-- ============================ -->
+  <!-- CONTRACTOR: TOP NAV (SHARED) -->
+  <!-- ============================ -->
+  <header class="sticky top-0 z-30 bg-black/75 backdrop-blur border-b border-white/10">
+    <div class="mx-auto max-w-7xl px-4 h-14 flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-3">
+        <div class="h-8 w-8 rounded-lg accent grid place-items-center font-bold">TS</div>
+        <span class="text-sm font-semibold tracking-wide">Timeless Solutions</span>
+      </a>
+      <nav class="hidden md:flex items-center gap-6 text-sm">
+        <!-- CONTRACTOR: top-level links match left-rail -->
+        <a class="opacity-90 hover:opacity-100" href="contractor-dashboard.html">Home</a>
+        <a class="opacity-90 hover:opacity-100" href="contractor-dashboard.html#projects">Projects</a>
+        <a class="opacity-90 hover:opacity-100" href="contractor-bids.html">My Bids</a>
+        <a class="opacity-90 hover:opacity-100" href="messages.html">Messages</a>
+        <a class="opacity-90 hover:opacity-100" href="contractor-profile.html">Profile</a>
+      </nav>
+      <div class="flex items-center gap-3">
+        <a href="help.html" class="hidden sm:inline text-sm opacity-80 hover:opacity-100">Help</a>
+        <div class="h-8 w-8 rounded-full bg-white/10 grid place-items-center text-xs">You</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================== -->
+  <!-- FRAME: LEFT RAIL + MAIN + ADS -->
+  <!-- ============================== -->
+  <div class="mx-auto max-w-7xl px-4 pt-6 pb-16 grid grid-cols-1 lg:grid-cols-[16rem_1fr_18rem] gap-6">
+
+    <!-- ================================== -->
+    <!-- CONTRACTOR: LEFT RAIL (ROLE-SPEC) -->
+    <!-- ================================== -->
+    <aside class="hidden lg:block">
+      <nav class="card rounded-2xl p-3">
+        <p class="text-xs uppercase tracking-wider text-white/60 px-2 pb-2">Contractor</p>
+        <a class="block px-3 py-2 rounded-lg bg-white/5 border border-white/10" href="contractor-dashboard.html">🏠 Home</a>
+        <a class="block px-3 py-2 rounded-lg hover:bg-white/5 mt-1" href="contractor-dashboard.html#projects">📁 Projects</a>
+        <a class="block px-3 py-2 rounded-lg hover:bg-white/5 mt-1" href="contractor-bids.html">💼 My Bids</a>
+        <a class="block px-3 py-2 rounded-lg hover:bg-white/5 mt-1" href="messages.html">💬 Messages</a>
+        <a class="block px-3 py-2 rounded-lg hover:bg-white/5 mt-1" href="contractor-profile.html">👤 Profile</a>
+      </nav>
+
+      <!-- SHARED: side ad slot placeholder -->
+      <div id="ad-slot-side" class="card rounded-2xl p-4 mt-4 min-h-40 grid place-items-center text-white/50 text-sm">
+        <!-- Reserved for future ads -->
+        <span>Ad space</span>
+      </div>
+    </aside>
+
+    <!-- ========================= -->
+    <!-- CONTRACTOR: MAIN CONTENT  -->
+    <!-- ========================= -->
+    <main>
+
+      <!-- SHARED: top banner ad slot -->
+      <div id="ad-slot-top" class="card rounded-2xl p-4 mb-4 grid place-items-center text-white/50 text-sm">
+        <!-- Reserved for future ads -->
+        <span>Ad banner</span>
+      </div>
+
+      <!-- Hero / welcome -->
+      <section class="card rounded-2xl p-5 mb-6">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h1 class="text-xl font-semibold">Welcome, <span id="welcomeName">Contractor</span> 👋</h1>
+            <p class="text-white/70 text-sm mt-1">Browse open opportunities and bid in seconds.</p>
+          </div>
+          <a href="contractor-profile.html" class="accent px-3 py-2 rounded-lg text-sm font-semibold hover:brightness-95">Complete Profile</a>
+        </div>
+      </section>
+
+      <!-- Filters -->
+      <section class="card rounded-2xl p-5 mb-6" aria-labelledby="filters-heading">
+        <div class="flex items-center justify-between flex-wrap gap-3">
+          <h2 id="filters-heading" class="text-sm font-semibold uppercase tracking-wider text-white/70">Filters</h2>
+          <button id="clearFilters" class="text-xs opacity-80 hover:opacity-100 underline">Clear</button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-3 mt-4">
+          <div class="md:col-span-1">
+            <label class="text-xs text-white/60">ZIP</label>
+            <input id="fZip" class="field mt-1 w-full rounded-lg px-3 py-2 text-sm" placeholder="e.g. 78249" />
+          </div>
+          <div class="md:col-span-2 grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs text-white/60">Budget Min ($)</label>
+              <input id="fBudgetMin" type="number" class="field mt-1 w-full rounded-lg px-3 py-2 text-sm" placeholder="10,000" />
+            </div>
+            <div>
+              <label class="text-xs text-white/60">Budget Max ($)</label>
+              <input id="fBudgetMax" type="number" class="field mt-1 w-full rounded-lg px-3 py-2 text-sm" placeholder="200,000" />
+            </div>
+          </div>
+          <div>
+            <label class="text-xs text-white/60">Timeline</label>
+            <select id="fTimeline" class="field mt-1 w-full rounded-lg px-3 py-2 text-sm">
+              <option value="">Any</option>
+              <option>ASAP</option>
+              <option>&lt; 1 month</option>
+              <option>1–3 months</option>
+              <option>3–6 months</option>
+              <option>6+ months</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-white/60">Keyword</label>
+            <input id="fKeyword" class="field mt-1 w-full rounded-lg px-3 py-2 text-sm" placeholder="e.g. electrical, restaurant…" />
+          </div>
+        </div>
+
+        <div class="mt-4 flex items-center gap-3">
+          <button id="applyFilters" class="accent px-3 py-2 rounded-lg text-sm font-semibold hover:brightness-95">Apply</button>
+          <span id="resultsCount" class="text-xs text-white/60"></span>
+        </div>
+      </section>
+
+      <!-- Feed -->
+      <section id="projectsFeed" aria-labelledby="projects-heading">
+        <h2 id="projects-heading" class="sr-only">Projects</h2>
+        <div id="projectsGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+
+        <!-- Empty state -->
+        <div id="emptyState" class="hidden card rounded-2xl p-8 mt-4 text-center text-white/60">
+          <p class="font-medium">No projects match your filters.</p>
+          <p class="text-sm mt-1">Try clearing a filter or searching another ZIP.</p>
+        </div>
+      </section>
+    </main>
+
+    <!-- =================== -->
+    <!-- CONTRACTOR: SIDEBAR -->
+    <!-- =================== -->
+    <aside class="hidden xl:block">
+      <div class="card rounded-2xl p-5">
+        <h3 class="text-sm font-semibold">Tips to win bids</h3>
+        <ul class="mt-3 space-y-2 text-sm text-white/70">
+          <li>• Be specific about timeline and inclusions.</li>
+          <li>• Mention license/insurance in your notes.</li>
+          <li>• Keep communication fast and professional.</li>
+        </ul>
+      </div>
+      <div class="card rounded-2xl p-5 mt-4">
+        <h3 class="text-sm font-semibold">Saved searches</h3>
+        <div class="mt-3 text-sm text-white/70">Coming soon.</div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ==================== -->
+  <!-- CONTRACTOR: QUICK BID -->
+  <!-- ==================== -->
+  <div id="bidModal" class="fixed inset-0 z-40 hidden">
+    <div class="absolute inset-0 bg-black/70" data-close-modal></div>
+    <div class="relative mx-auto max-w-md mt-24 px-4">
+      <div class="card rounded-2xl p-5">
+        <div class="flex items-start justify-between">
+          <div>
+            <h3 class="text-lg font-semibold">Quick Bid</h3>
+            <p id="bidProjectTitle" class="text-sm text-white/70 mt-1">Project title…</p>
+          </div>
+          <button class="text-white/60 hover:text-white" data-close-modal aria-label="Close">✕</button>
+        </div>
+
+        <form id="bidForm" class="mt-4 space-y-4">
+          <div>
+            <label class="text-xs text-white/60">Amount (USD)</label>
+            <input id="bidAmount" type="number" min="0" required class="field mt-1 w-full rounded-lg px-3 py-2 text-sm" placeholder="e.g. 58,200" />
+          </div>
+          <div>
+            <label class="text-xs text-white/60">Notes (optional)</label>
+            <textarea id="bidNotes" rows="3" class="field mt-1 w-full rounded-lg px-3 py-2 text-sm" placeholder="Brief scope, inclusions, permits…"></textarea>
+          </div>
+
+          <div class="flex items-center justify-between gap-3">
+            <button type="button" id="saveBidDraft" class="px-3 py-2 rounded-lg border border-white/15 hover:bg-white/5 text-sm">Save Draft</button>
+            <div class="flex items-center gap-2">
+              <button type="button" class="px-3 py-2 rounded-lg border border-white/15 hover:bg-white/5 text-sm" data-close-modal>Cancel</button>
+              <button type="submit" class="accent px-3 py-2 rounded-lg text-sm font-semibold hover:brightness-95">Submit Bid</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- =================== -->
+  <!-- SHARED: SIMPLE TOAST -->
+  <!-- =================== -->
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 hidden">
+    <div class="accent px-4 py-2 rounded-lg text-sm font-medium shadow-lg">Saved</div>
+  </div>
+
+  <!-- ================== -->
+  <!-- CONTRACTOR: SCRIPT -->
+  <!-- ================== -->
+  <script>
+    // Demo data (replace with Supabase later)
+    const PROJECTS = [
+      { id: '1', title: 'Restaurant buildout - stage 2', developer: 'Civic Dev Co', zip: '78249', budgetMin: 45000, budgetMax: 60000, timeline: '1–3 months', created_at: '2025-09-01T12:00:00Z', excerpt: 'Relocate kitchen hood and upgrade panel.' },
+      { id: '2', title: 'Office TI — electrical and low voltage', developer: 'North River Partners', zip: '78250', budgetMin: 15000, budgetMax: 30000, timeline: 'ASAP', created_at: '2025-09-02T16:00:00Z', excerpt: 'New runs, drops, patch panel, and fixtures.' },
+      { id: '3', title: 'Retail shell — concrete & framing', developer: 'Red Oak Development', zip: '78251', budgetMin: 90000, budgetMax: 140000, timeline: '3–6 months', created_at: '2025-08-28T09:00:00Z', excerpt: 'Foundations, slab, CMU, and structural framing.' },
+      { id: '4', title: 'Multi-family exterior repaint', developer: 'Vista Build', zip: '78249', budgetMin: 20000, budgetMax: 38000, timeline: '< 1 month', created_at: '2025-09-03T10:00:00Z', excerpt: 'Prep, prime, and repaint 6 buildings.' },
+      { id: '5', title: 'HVAC upgrade — small school', developer: 'Horizon EDU Capital', zip: '78240', budgetMin: 55000, budgetMax: 90000, timeline: '1–3 months', created_at: '2025-08-25T11:00:00Z', excerpt: 'RTUs, ductwork, and commissioning.' },
+    ];
+
+    const elGrid = document.getElementById('projectsGrid');
+    const elEmpty = document.getElementById('emptyState');
+    const elResults = document.getElementById('resultsCount');
+
+    const fZip = document.getElementById('fZip');
+    const fBudgetMin = document.getElementById('fBudgetMin');
+    const fBudgetMax = document.getElementById('fBudgetMax');
+    const fTimeline = document.getElementById('fTimeline');
+    const fKeyword = document.getElementById('fKeyword');
+
+    function fmtUSD(n){ return Number(n).toLocaleString(undefined,{style:'currency',currency:'USD',maximumFractionDigits:0}); }
+    function ago(iso){
+      const s = Math.floor((Date.now() - new Date(iso).getTime())/1000);
+      if(s<60) return `${s}s ago`;
+      const m = Math.floor(s/60); if(m<60) return `${m}m ago`;
+      const h = Math.floor(m/60); if(h<24) return `${h}h ago`;
+      const d = Math.floor(h/24); return `${d}d ago`;
+    }
+
+    function card(p){
+      return `
+      <article class="card rounded-2xl p-4 flex flex-col justify-between">
+        <div>
+          <div class="flex items-start justify-between gap-2">
+            <h3 class="font-semibold leading-tight">${p.title}</h3>
+            <span class="pill">${p.timeline}</span>
+          </div>
+          <p class="text-sm text-white/70 mt-1">${p.developer}</p>
+          <div class="flex items-center gap-2 mt-2 text-sm">
+            <span class="pill">${p.zip}</span>
+            <span class="pill">${fmtUSD(p.budgetMin)} – ${fmtUSD(p.budgetMax)}</span>
+            <span class="text-white/50">${ago(p.created_at)}</span>
+          </div>
+          <p class="text-sm text-white/70 mt-3 line-clamp-2">${p.excerpt}</p>
+        </div>
+        <div class="mt-4 flex items-center justify-between gap-2">
+          <a href="project.html?id=${p.id}" class="px-3 py-2 rounded-lg border border-white/15 hover:bg-white/5 text-sm">View</a>
+          <button class="accent px-3 py-2 rounded-lg text-sm font-semibold hover:brightness-95" data-quick-bid data-id="${p.id}">Quick Bid</button>
+        </div>
+      </article>`;
+    }
+
+    function applyFilters(){
+      const zip = fZip.value.trim();
+      const min = Number(fBudgetMin.value || 0);
+      const max = Number(fBudgetMax.value || Infinity);
+      const tl = fTimeline.value;
+      const kw = fKeyword.value.trim().toLowerCase();
+
+      const out = PROJECTS.filter(p=>{
+        if(zip && p.zip !== zip) return false;
+        const bOK = (p.budgetMax >= min) && (p.budgetMin <= max);
+        if(!bOK) return false;
+        if(tl && p.timeline !== tl) return false;
+        if(kw && !(p.title.toLowerCase().includes(kw) || p.excerpt.toLowerCase().includes(kw) || p.developer.toLowerCase().includes(kw))) return false;
+        return true;
+      });
+
+      elGrid.innerHTML = out.map(card).join('');
+      elResults.textContent = `${out.length} result${out.length===1?'':'s'}`;
+      elEmpty.classList.toggle('hidden', out.length !== 0);
+      wireQuickBidButtons(); // buttons re-render each time
+    }
+
+    function clearFilters(){
+      fZip.value=''; fBudgetMin.value=''; fBudgetMax.value=''; fTimeline.value=''; fKeyword.value='';
+      applyFilters();
+    }
+
+    document.getElementById('applyFilters').addEventListener('click', applyFilters);
+    document.getElementById('clearFilters').addEventListener('click', clearFilters);
+    // Apply on Enter in any field
+    [fZip,fBudgetMin,fBudgetMax,fTimeline,fKeyword].forEach(i=>i.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); applyFilters(); }}));
+
+    // Initial render
+    applyFilters();
+
+    // ===== Quick Bid modal logic =====
+    const modal = document.getElementById('bidModal');
+    const bidTitle = document.getElementById('bidProjectTitle');
+    const bidAmount = document.getElementById('bidAmount');
+    const bidNotes = document.getElementById('bidNotes');
+    const bidForm = document.getElementById('bidForm');
+    const toast = document.getElementById('toast');
+    let activeProjectId = null;
+
+    function openModalFor(projectId){
+      activeProjectId = projectId;
+      const p = PROJECTS.find(x=>x.id===projectId);
+      bidTitle.textContent = p ? p.title : 'Project';
+      bidAmount.value=''; bidNotes.value='';
+      modal.classList.remove('hidden');
+    }
+    function closeModal(){
+      modal.classList.add('hidden');
+      activeProjectId = null;
+    }
+    function showToast(msg='Saved'){
+      toast.firstElementChild.textContent = msg;
+      toast.classList.remove('hidden');
+      setTimeout(()=>toast.classList.add('hidden'), 1400);
+    }
+
+    function wireQuickBidButtons(){
+      document.querySelectorAll('[data-quick-bid]').forEach(btn=>{
+        btn.addEventListener('click', ()=>openModalFor(btn.dataset.id));
+      });
+    }
+    wireQuickBidButtons();
+
+    modal.querySelectorAll('[data-close-modal]').forEach(el=>el.addEventListener('click', closeModal));
+
+    document.getElementById('saveBidDraft').addEventListener('click', ()=>{
+      // Stub: you’d persist to localStorage or backend later
+      showToast('Draft saved');
+      closeModal();
+    });
+
+    bidForm.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const amount = Number(bidAmount.value || 0);
+      if(!activeProjectId || amount<=0){ showToast('Enter a valid amount'); return; }
+      // Stub: send to backend later
+      showToast('Bid submitted');
+      closeModal();
+    });
+
+    // Optional: populate welcome name later from profile/session
+    // document.getElementById('welcomeName').textContent = 'Axel';
+  </script>
+
+  <!-- ================= -->
+  <!-- SHARED: FOOTER   -->
+  <!-- ================= -->
+  <footer class="border-t border-white/10">
+    <div class="mx-auto max-w-7xl px-4 py-8 grid gap-6 md:grid-cols-3">
+      <div>
+        <div class="flex items-center gap-3">
+          <div class="h-8 w-8 rounded-lg accent grid place-items-center font-bold">TS</div>
+          <span class="text-sm font-semibold">Timeless Solutions</span>
+        </div>
+        <p class="text-sm text-white/70 mt-2">
+          Our mission: connect serious developers with vetted contractors — fast.
+        </p>
+      </div>
+      <nav class="text-sm text-white/80 grid grid-cols-2 gap-2">
+        <a href="index.html" class="hover:underline">Home</a>
+        <a href="signup.html" class="hover:underline">Sign Up</a>
+        <a href="login.html" class="hover:underline">Login</a>
+        <a href="terms.html" class="hover:underline">Terms</a>
+        <a href="privacy.html" class="hover:underline">Privacy</a>
+        <a href="messages.html" class="hover:underline">Messages</a>
+      </nav>
+      <div class="text-sm text-white/60">
+        <p>© <span id="y"></span> Timeless Solutions</p>
+      </div>
+    </div>
+    <script>document.getElementById('y').textContent = new Date().getFullYear();</script>
+  </footer>
+
+  <!-- ============================ -->
+  <!-- (DEVELOPER-ONLY SECTIONS N/A) -->
+  <!-- ============================ -->
+  <!--
+    DEVELOPER CODE WOULD LIVE IN developer-*.html PAGES.
+    This file is strictly contractor-facing by design.
+  -->
+
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+    const supabase = createClient(
+      "https://twxpfobmjaaoaixwqcfn.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR3eHBmb2JtamFhb2FpeHdxY2ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3NDM1MTcsImV4cCI6MjA3MTMxOTUxN30._mVC0QPx23QpG_4Y-VKb20mWCVTGAe_JRwyFyD0vHxA"
+    );
+
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session) {
+      window.location.href = "/login.html";
+    } else {
+      const nameEl = document.getElementById('welcomeName');
+      if (nameEl) nameEl.textContent = session.user.email;
+    }
+  </script>
+</body>
+</html>
