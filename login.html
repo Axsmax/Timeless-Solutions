@@ -199,9 +199,9 @@
         // Fetch profile: role + payment status
         const { data: profile, error: profErr } = await supabase
           .from("profiles")
-          .select("role, status, is_paid")
+          .select("role, approved, is_paid")
           .eq("id", userId)
-          .maybeSingle();
+          .single();
 
         if (profErr) {
           showAlert("error", "Profile lookup failed. Please try again.");
@@ -209,23 +209,23 @@
         }
 
         // Gate access
-        if (!profile || profile.status !== "approved") {
-          showAlert("error", "Your application is still pending approval. You’ll hear back within 24–48 hours.");
+        if (!profile.approved) {
+          showAlert("error", "Pending approval");
           return;
         }
 
         if (profile.role === "contractor" && !profile.is_paid) {
-          showAlert("error", "Membership payment required before access.");
+          showAlert("error", "Payment required");
           // TODO: window.location.href = "payment.html"; // when payment page exists
           return;
         }
 
-        // ✅ Success
-        showAlert("success", `Welcome back, ${profile.role}! You’re cleared for access.`);
-
-        // TODO: Redirect to role dashboard once built
-        // if (profile.role === "developer") window.location.href = "developer-dashboard.html";
-        // else window.location.href = "contractor-dashboard.html";
+        // Redirect to dashboard based on role
+        if (profile.role === "contractor") {
+          window.location.href = "contractor-dashboard.html";
+        } else if (profile.role === "developer") {
+          window.location.href = "developer-dashboard.html";
+        }
       } catch (err) {
         console.error(err);
         showAlert("error", "Unexpected error. Please try again.");
