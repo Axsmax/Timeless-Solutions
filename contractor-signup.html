@@ -193,7 +193,7 @@
             <h3 class="text-lg font-semibold">Application submitted</h3>
           </div>
           <p class="text-sm text-neutral-700">
-            Your application is <span class="font-medium">pending approval</span>. You’ll hear back within <span class="font-medium">24–48 hours</span>.
+            Your account is <span class="font-medium">pending approval</span>. You’ll hear back within <span class="font-medium">24–48 hours</span>.
           </p>
           <p class="mt-2 text-sm text-neutral-700">
             After approval, you’ll complete your contractor membership payment to access private projects.
@@ -270,11 +270,13 @@
     if (typeof validate === "function" && !validate()) return;
 
     // Gather fields
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
     const payload = {
       role: "contractor",
       full_name: document.getElementById("fullName").value.trim(),
       company_name: document.getElementById("companyName").value.trim(),
-      email: document.getElementById("email").value.trim(),
+      email,
       phone: document.getElementById("phone").value.trim(),
       trade: document.getElementById("trade").value,
       years_in_business: Number(document.getElementById("years").value || 0),
@@ -290,25 +292,38 @@
     const licenseFile = document.getElementById("license")?.files?.[0] || null;
 
     try {
-      // 1) Try upload (will skip if no session)
+      // 1) Sign up user
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { role: "contractor" } }
+      });
+      if (signUpError) {
+        showAlert("error", signUpError.message);
+        return;
+      }
+      const userId = signUpData?.user?.id || null;
+
+      // 2) Try upload (will skip if no session)
       const up = await maybeUploadToApplicationsBucket(licenseFile);
       const license_url = up.path || null; // store path in applications.license_url
 
-      // 2) Insert application
-      const { error } = await supabase.from("applications").insert([{
+      // 3) Insert application
+      const { error } = await supabase.from("applications").insert([{ 
         ...payload,
+        user_id: userId,
         license_url  // ensure your table has this column
       }]);
       if (error) throw error;
 
-      // 3) UI success
+      // 4) UI success
       form.classList.add("hidden");
       successState.classList.remove("hidden");
 
       if (up.skipped) {
-        showAlert("info", "Application received. You can upload documents after we approve and invite you to log in.");
+        showAlert("info", "Application received. Your account is pending approval. You can upload documents after we approve and invite you to log in.");
       } else {
-        showAlert("success", "Application received with your document. We’ll review it shortly.");
+        showAlert("success", "Application received with your document. Your account is pending approval and we’ll review it shortly.");
       }
     } catch (err) {
       console.error(err);
