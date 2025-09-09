@@ -287,54 +287,64 @@
         return ok;
     }
 
-    /* 4) Real submit → Supabase */
+    /* 4) Real submit → sign up, profile, optional application */
     form.addEventListener("submit", async (e) => {
         e.preventDefault();
         if (!validate()) return;
 
-        // Build payload from form
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+
         const payload = {
-        fullName: document.getElementById("fullName").value.trim(),
-        companyName: document.getElementById("companyName").value.trim(),
-        email: document.getElementById("email").value.trim(),
+        full_name: document.getElementById("fullName").value.trim(),
+        company_name: document.getElementById("companyName").value.trim(),
         phone: document.getElementById("phone").value.trim(),
-        // NOTE: DO NOT store this password in applications; real account is created on approval via Supabase invite
-        projectType: document.getElementById("projectType").value,
-        projectZips: document.getElementById("zips").value.trim().split(",").map(s => s.trim()),
-        proofFile: document.getElementById("proof").files[0] || null,
+        project_type: document.getElementById("projectType").value,
+        project_zips: document.getElementById("zips").value.trim().split(",").map(s => s.trim()),
         website: document.getElementById("website").value.trim() || null,
         linkedin: document.getElementById("linkedin").value.trim() || null
         };
+        const proofFile = document.getElementById("proof").files[0] || null;
 
         try {
-        // Optional file upload
+        const { data: { user }, error: signUpError } = await supabase.auth.signUp({ email, password });
+        if (signUpError) {
+            if (signUpError.status === 422) {
+            showAlert("error", "That email is already registered. Please log in or reset your password.");
+            return;
+            }
+            throw signUpError;
+        }
+
         let proof_filename = null;
-        if (USE_STORAGE && payload.proofFile) {
-            const fileName = `incoming/${crypto.randomUUID()}_${payload.proofFile.name}`;
-            const { error: upErr } = await supabase.storage.from("applications").upload(fileName, payload.proofFile);
+        if (USE_STORAGE && proofFile) {
+            const fileName = `incoming/${crypto.randomUUID()}_${proofFile.name}`;
+            const { error: upErr } = await supabase.storage.from("applications").upload(fileName, proofFile);
             if (upErr) throw upErr;
             proof_filename = fileName;
         }
 
-        // Insert application row
-        const { error } = await supabase.from("applications").insert([{
+        const { error: profileError } = await supabase.from("profiles").insert([{
+            id: user.id,
             role: "developer",
-            full_name: payload.fullName,
-            company_name: payload.companyName,
-            email: payload.email,
-            phone: payload.phone,
-            project_type: payload.projectType,
-            project_zips: payload.projectZips,
-            website: payload.website,
-            linkedin: payload.linkedin,
+            status: "pending",
+            is_paid: false,
+            ...payload
+        }]);
+        if (profileError) throw profileError;
+
+        const { error: appError } = await supabase.from("applications").insert([{
+            user_id: user.id,
+            role: "developer",
+            email,
+            ...payload,
             proof_filename
         }]);
-        if (error) throw error;
+        if (appError) throw appError;
 
-        // Success UI
         form.classList.add("hidden");
         successState.classList.remove("hidden");
-        showAlert("success", "Application received. We’ll review it shortly.");
+        showAlert("success", "Account created. Your profile is pending approval.");
 
         } catch (err) {
         console.error(err);
