@@ -216,11 +216,7 @@
 
     <script type="module">
     /* 1) Supabase init */
-    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-    const supabase = createClient(
-        "https://twxpfobmjaaoaixwqcfn.supabase.co",
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR3eHBmb2JtamFhb2FpeHdxY2ZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3NDM1MTcsImV4cCI6MjA3MTMxOTUxN30._mVC0QPx23QpG_4Y-VKb20mWCVTGAe_JRwyFyD0vHxA"
-    );
+    import supabase from "./js/supabaseClient.js";
 
     // If you created a PRIVATE bucket named "applications", leave true; else set to false (skips file upload)
     const USE_STORAGE = true;
