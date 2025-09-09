@@ -261,60 +261,67 @@
     return { path: data.path, skipped: false };
   }
 
-  /* 5) Submit → insert application row (and optional file) */
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    clearAlert();
+    /* 5) Submit → sign up, create profile, optional application */
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      clearAlert();
 
-    // If you kept your existing validate(), call it here:
-    if (typeof validate === "function" && !validate()) return;
+      if (typeof validate === "function" && !validate()) return;
 
-    // Gather fields
-    const payload = {
-      role: "contractor",
-      full_name: document.getElementById("fullName").value.trim(),
-      company_name: document.getElementById("companyName").value.trim(),
-      email: document.getElementById("email").value.trim(),
-      phone: document.getElementById("phone").value.trim(),
-      trade: document.getElementById("trade").value,
-      years_in_business: Number(document.getElementById("years").value || 0),
-      service_zips: document.getElementById("zips").value.split(",").map(s => s.trim()).filter(Boolean)
-      // add your vetting fields here if you included them in the HTML:
-      // years_band: document.getElementById("yearsBand")?.value || null,
-      // proof_method: document.getElementById("proofMethod")?.value || null,
-      // proof_value: document.getElementById("proofValue")?.value || null,
-      // notes: document.getElementById("notes")?.value?.trim() || null,
-      // attest: !!document.getElementById("attest")?.checked,
-    };
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
 
-    const licenseFile = document.getElementById("license")?.files?.[0] || null;
+      const payload = {
+        role: "contractor",
+        full_name: document.getElementById("fullName").value.trim(),
+        company_name: document.getElementById("companyName").value.trim(),
+        phone: document.getElementById("phone").value.trim(),
+        trade: document.getElementById("trade").value,
+        years_in_business: Number(document.getElementById("years").value || 0),
+        service_zips: document.getElementById("zips").value.split(",").map(s => s.trim()).filter(Boolean)
+      };
 
-    try {
-      // 1) Try upload (will skip if no session)
-      const up = await maybeUploadToApplicationsBucket(licenseFile);
-      const license_url = up.path || null; // store path in applications.license_url
+      const licenseFile = document.getElementById("license")?.files?.[0] || null;
 
-      // 2) Insert application
-      const { error } = await supabase.from("applications").insert([{
-        ...payload,
-        license_url  // ensure your table has this column
-      }]);
-      if (error) throw error;
+      try {
+        const { data: { user }, error: signUpError } = await supabase.auth.signUp({ email, password });
+        if (signUpError) {
+          if (signUpError.status === 422) {
+            showAlert("error", "That email is already registered. Please log in or reset your password.");
+            return;
+          }
+          throw signUpError;
+        }
 
-      // 3) UI success
-      form.classList.add("hidden");
-      successState.classList.remove("hidden");
+        const up = await maybeUploadToApplicationsBucket(licenseFile);
+        const license_url = up.path || null;
 
-      if (up.skipped) {
-        showAlert("info", "Application received. You can upload documents after we approve and invite you to log in.");
-      } else {
-        showAlert("success", "Application received with your document. We’ll review it shortly.");
+        const { error: profileError } = await supabase.from("profiles").insert([{
+          id: user.id,
+          role: "contractor",
+          status: "pending",
+          is_paid: false,
+          ...payload
+        }]);
+        if (profileError) throw profileError;
+
+        const { error: appError } = await supabase.from("applications").insert([{
+          user_id: user.id,
+          ...payload,
+          email,
+          license_url
+        }]);
+        if (appError) throw appError;
+
+        form.classList.add("hidden");
+        successState.classList.remove("hidden");
+
+        showAlert("success", "Account created. Your profile is pending approval.");
+      } catch (err) {
+        console.error(err);
+        showAlert("error", err?.message || "Something went wrong. Try again.");
       }
-    } catch (err) {
-      console.error(err);
-      showAlert("error", err?.message || "Something went wrong. Try again.");
-    }
-  });
+    });
 
   // Optional: role prefill
   try {
